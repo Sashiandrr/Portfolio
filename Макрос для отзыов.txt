@@ -1,0 +1,164 @@
+Sub ProcessAllFiles()
+    Dim folderPath As String
+    Dim fileName As String
+    Dim wb As Workbook
+    
+    ' Укажи путь к папке с файлами
+    folderPath = "Y:\" ' Измени на свою папку
+    
+    ' Получаем первый файл .xlsx в папке
+    fileName = Dir(folderPath & "*.xlsx")
+    
+    ' Цикл по всем .xlsx файлам
+    Do While fileName <> ""
+        ' Открываем файл
+        Set wb = Workbooks.Open(folderPath & fileName)
+        
+        ' Запускаем обработку файла
+        SaveFilteredByBrand wb
+        
+        ' Закрываем исходный файл без сохранения (чтобы не портить оригинал)
+        wb.Close SaveChanges:=False
+        
+        ' Берём следующий файл
+        fileName = Dir
+    Loop
+    
+    MsgBox "Обработка всех файлов завершена!", vbInformation
+End Sub
+
+Sub SaveFilteredByBrand(wb As Workbook)
+        Dim ws As Worksheet
+    Dim newWb As Workbook
+    Dim lastRow As Long, lastCol As Long
+    Dim tag As Variant
+    Dim filteredRange As Range
+    Dim savePath As String
+    Dim newFileName As String
+    Dim baseName As String
+    Dim brandMap As Object
+    Dim keywords As Variant
+    Dim exclusionWords As Variant
+
+    ' Укажите путь сохранения файлов
+    savePath = "Y:\"
+    
+    ' Получаем имя файла без расширения
+    baseName = wb.Name
+    baseName = Left(baseName, InStrRev(baseName, ".") - 1)
+
+    ' Удаляем лишние части в названии
+    baseName = Replace(baseName, "отзывы по брендам_", "")
+    baseName = Replace(baseName, "abi конкуренты_", "")
+    baseName = Trim(baseName)
+
+    ' Создаём соответствие брендов новым именам
+    Set brandMap = CreateObject("Scripting.Dictionary")
+
+    ' Добавляем массив брендов к одному тегу
+    brandMap.Add "_ОМПК_", Array("Папа может", "Останкино")
+    brandMap.Add "_Мираторг_", Array("Мираторг")
+    brandMap.Add "_Морозко_", Array("Цезарь", "Жаренки")
+    brandMap.Add "_ЩелковскийМК_", Array("Sибирская коллекция")
+    brandMap.Add "_ВС_", Array("Владимирский стандарт")
+    brandMap.Add "_ВЛМК_", Array("Великолукский МК")
+
+    ' Используем первый лист книги
+    Set ws = wb.Sheets(1)
+
+    ' Определяем границы таблицы
+    lastRow = ws.Cells(ws.Rows.Count, "AU").End(xlUp).Row
+    lastCol = ws.Cells(6, ws.Columns.Count).End(xlToLeft).Column
+
+    ' Проверяем, есть ли данные
+    If lastRow < 7 Then Exit Sub
+
+    ' Цикл по брендам
+    For Each tag In brandMap.Keys
+        Dim brandList As Variant
+        brandList = brandMap(tag) ' Получаем массив брендов для тега
+
+        ' Фильтруем по каждому бренду из списка
+        If UBound(brandList) = 0 Then
+            ' Если один бренд, применяем обычный фильтр
+            ws.Range("B6").AutoFilter Field:=46, Criteria1:=brandList(0)
+        Else
+            ' Если несколько брендов, применяем фильтр через оператор xlOr
+            ws.Range("B6").AutoFilter Field:=46, Criteria1:=brandList(0), Operator:=xlOr, Criteria2:=brandList(1)
+        End If
+
+        ' Получаем видимые строки после фильтрации
+        On Error Resume Next
+        Set filteredRange = ws.Range("B7:B" & lastRow).SpecialCells(xlCellTypeVisible)
+        On Error GoTo 0
+
+        ' Если есть отфильтрованные данные
+        If Not filteredRange Is Nothing Then
+            ' Устанавливаем ключевые слова
+            keywords = Array("Наггетс", "Бургер", "Кордон блю", "Пельмен", "Сосиск", "Колбас", "Копче", "Вялен", "Шпикач", "Сардель", "Рулет", "Чипсы", "Вареник", "Ветчина", "Блин", "Пицц", "Снек", "Хинкал", "Чебу", "Манты", "Крыл", "Чиабат", "корн", "мини", "сервел", "салями")
+            exclusionWords = Array("булочка", "булочки", "маринад")
+
+            ' Удаляем строки, не содержащие ключевые слова или содержащие исключения
+            Call RemoveRowsWithoutKeywordsOrWithExclusions(ws, keywords, exclusionWords, lastRow)
+
+            ' Формируем имя файла
+            newFileName = tag & baseName
+            If Len(newFileName) > 7 Then newFileName = Left(newFileName, Len(newFileName) - 7)
+
+            ' Создаём новую книгу
+            Set newWb = Workbooks.Add
+            With newWb.Sheets(1)
+                ' Копируем заголовки и данные
+                .Cells(6, 2).Resize(1, lastCol - 1).Value = ws.Range("B6:AU6").Value
+                ws.Range("B7:AU" & lastRow).SpecialCells(xlCellTypeVisible).Copy
+                .Cells(7, 2).PasteSpecial Paste:=xlPasteValues
+            End With
+
+            ' Сохраняем и закрываем
+            newWb.SaveAs savePath & newFileName & ".xlsx", FileFormat:=xlOpenXMLWorkbook
+            newWb.Close False
+        End If
+        
+        ' Очистка
+        Set filteredRange = Nothing
+        ws.AutoFilterMode = False
+    Next tag
+End Sub
+
+' --- Функция удаления строк, не содержащих ключевые слова или содержащих исключения ---
+Sub RemoveRowsWithoutKeywordsOrWithExclusions(ws As Worksheet, keywords As Variant, exclusionWords As Variant, lastRow As Long)
+    Dim i As Long
+    Dim found As Boolean
+    Dim skipRow As Boolean
+    Dim keyword As Variant
+    Dim exclWord As Variant
+
+    ' Проходим по всем строкам и удаляем те, которые не содержат ключевых слов или содержат исключения
+    For i = lastRow To 7 Step -1
+        found = False
+        skipRow = False
+        If ws.Rows(i).Hidden = False Then
+            ' Проверяем на ключевые слова
+            For Each keyword In keywords
+                If InStr(1, ws.Cells(i, 11).Value, keyword, vbTextCompare) > 0 Then
+                    found = True
+                    Exit For
+                End If
+            Next keyword
+            
+            ' Если ключевое слово не найдено, пропускаем строку
+            If Not found Then
+                ws.Rows(i).Delete
+            Else
+                ' Если строка содержит исключения, удаляем её
+                For Each exclWord In exclusionWords
+                    If InStr(1, ws.Cells(i, 11).Value, exclWord, vbTextCompare) > 0 Then
+                        skipRow = True
+                        Exit For
+                    End If
+                Next exclWord
+                If skipRow Then ws.Rows(i).Delete
+            End If
+        End If
+    Next i
+End Sub
