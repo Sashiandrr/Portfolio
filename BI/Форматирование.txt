@@ -1,0 +1,61 @@
+Формат Кол-во сетей = 
+VAR _AllSelected =
+    ALLSELECTED('Календарь'[Первый день месяца], 'Календарь'[МесяцГод], 'Календарь'[МесяцГод])
+
+VAR _Current = [Кол-во сетей]
+VAR _Min = MINX(_AllSelected, [Кол-во сетей])
+VAR _Max = MAXX(_AllSelected, [Кол-во сетей])
+VAR _Mid = (_Min + _Max) / 2 // Среднее значение для перехода в жёлтый
+
+// Начальные цвета (Красный, Жёлтый, Зелёный)
+VAR _R1 = 248
+VAR _G1 = 105
+VAR _B1 = 107
+
+VAR _R2 = 255
+VAR _G2 = 235
+VAR _B2 = 132
+
+VAR _R3 = 99
+VAR _G3 = 190
+VAR _B3 = 123
+
+// Вычисляем цвет в зависимости от положения значения
+VAR _R =
+    IF(
+        ISBLANK(_Current), 
+        BLANK(),
+        IF(
+            _Current <= _Mid, 
+            ROUND(_R1 + (_R2 - _R1) * DIVIDE(_Current - _Min,_Mid - _Min), 0), 
+            ROUND(_R2 + (_R3 - _R2) * DIVIDE(_Current - _Mid,_Max - _Mid), 0)
+        )
+    )
+
+VAR _G =
+    IF(
+        ISBLANK(_Current), 
+        BLANK(),
+        IF(
+            _Current <= _Mid, 
+            ROUND(_G1 + (_G2 - _G1) * DIVIDE(_Current - _Min,_Mid - _Min), 0), 
+            ROUND(_G2 + (_G3 - _G2) * DIVIDE(_Current - _Mid,_Max - _Mid), 0)
+        )
+    )
+
+VAR _B =
+    IF(
+        ISBLANK(_Current), 
+        BLANK(),
+        IF(
+            _Current <= _Mid, 
+            ROUND(_B1 + (_B2 - _B1) * DIVIDE(_Current - _Min,_Mid - _Min), 0), 
+            ROUND(_B2 + (_B3 - _B2) * DIVIDE(_Current - _Mid,_Max - _Mid), 0)
+        )
+    )
+
+// Собираем итоговый RGB
+VAR _result = "RGB(" & _R & "," & _G & "," & _B & ")"
+
+RETURN 
+    IF(ISBLANK([Кол-во сетей]) || HASONEVALUE('Календарь'[МесяцГод]) = FALSE(), BLANK(), _result)

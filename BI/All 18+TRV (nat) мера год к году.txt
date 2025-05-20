@@ -1,0 +1,24 @@
+1All 18+TRV (nat) мера год к году = 
+
+var M1 =CALCULATE(COUNT(Calendars[МесяцГод]),ALLSELECTED('Calendars'[МесяцГод]))
+var M2 =CALCULATE(COUNT(Calendars[МесяцГод]),REMOVEFILTERS(Calendars[MonthName]))
+var dataALL=ALLSELECTED('Calendars'[Year])
+var data1Rall=CALCULATE(MAX('Calendars'[Year]),REMOVEFILTERS('Promotion viewRetailerFacts'[Бренд]),dataALL,REMOVEFILTERS(Calendars))
+var data1R=CALCULATE(MAX('Calendars'[Year]),REMOVEFILTERS('Promotion viewRetailerFacts'[Бренд]),dataALL)
+var data22=data1R-1 --22
+var data33=data1R-2 --21
+var data44=data1R-3
+
+var delta =DIVIDE(CALCULATE(SUM('Promotion viewRetailerFacts'[All 18+ TVR (Nat)]),'Calendars'[Year]=data1R),
+       CALCULATE(SUM('Promotion viewRetailerFacts'[All 18+ TVR (Nat)]),'Calendars'[Year]=data22))
+
+return 
+
+IF(HASONEVALUE(Calendars[Year]),
+ROUND(IF(CALCULATE(SUM('Promotion viewRetailerFacts'[All 18+ TVR (Nat)]),'Calendars'[Year]=data1R)=BLANK()||0,BLANK(),
+IF(
+    CALCULATE(SUM('Promotion viewRetailerFacts'[All 18+ TVR (Nat)]))=0,
+    BLANK(),
+    CALCULATE(SUM('Promotion viewRetailerFacts'[All 18+ TVR (Nat)]))))
+      ,0),
+         (IF( FORMAT(delta,"percent")=BLANK(),BLANK(),FORMAT(delta-1,"percent"))))

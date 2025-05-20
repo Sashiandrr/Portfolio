@@ -1,0 +1,9 @@
+Budg_t = VAR uy = calculate(MAXX(SUMMARIZE('Promotion Facts','Promotion Manufacturer'[ManufacturerReport],'Promotion Brand'[Brand],'Promotion Facts'[SegmentName],'Promotion Facts'[ProductName]),[Уровень иерархии_]),REMOVEFILTERS('Promotion Facts'[Уровень иерархии]))
+return 
+SWITCH(TRUE(),
+--Были "", заменили на Blank()
+ISBLANK([Бюджет]),BLANK(),
+HASONEFILTER('Promotion Category'[CategoryShort])&&CALCULATE(DISTINCTCOUNT('Promotion Facts'[SegmentName]),FILTER('Promotion Facts','Promotion Facts'[ProductName]<>"Total"),REMOVEFILTERS('Promotion Facts'[SegmentName]))>1,CALCULATE([Бюджет],'Promotion Facts'[ProductName]="Total"),
+HASONEFILTER('Promotion Brand'[Brand]),CALCULATE([Бюджет],FILTER('Promotion Facts','Promotion Facts'[ProductName]<>"Total"),FILTER(VALUES('Promotion Facts'[ProductName]),[Уровень иерархии_]=uy)),
+HASONEFILTER('Promotion Facts'[ProductName]),CALCULATE([Бюджет],FILTER('Promotion Facts','Promotion Facts'[ProductName]<>"Total"),FILTER(VALUES('Promotion Facts'[ProductName]),[Уровень иерархии_]=uy))
+,BLANK())

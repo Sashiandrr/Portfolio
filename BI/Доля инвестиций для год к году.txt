@@ -1,0 +1,26 @@
+1Доля инвестиций для год к году = 
+var M1 =CALCULATE(COUNT(Calendars[МесяцГод]),ALLSELECTED('Calendars'[МесяцГод]))
+var M2 =CALCULATE(COUNT(Calendars[МесяцГод]),REMOVEFILTERS(Calendars[MonthName]))
+var dataALL=ALLSELECTED('Calendars'[Year])
+var data1Rall=CALCULATE(MAX('Calendars'[Year]),REMOVEFILTERS('Promotion viewRetailerFacts'[Бренд]),dataALL,REMOVEFILTERS(Calendars))
+var data1R=CALCULATE(MAX('Calendars'[Year]),REMOVEFILTERS('Promotion viewRetailerFacts'[Бренд]),dataALL)
+var data22=data1R-1 --22
+var data33=data1R-2 --21
+var data44=data1R-3
+var delta =DIVIDE(CALCULATE(SUM([Est. Cost, Rub]),'Calendars'[Year]=data1R),
+       CALCULATE(SUM([Est. Cost, Rub]),'Calendars'[Year]=data22))
+
+var sumDOL=CALCULATE(SUM([Est. Cost, Rub]),ALLSELECTED('Promotion viewRetailerFacts'[Магазин]),ALLSELECTED('Promotion viewRetailerFacts'[Бренд]),ALLSELECTED('Promotion viewRetailerFacts'[Производитель]))
+
+--return
+--IF(CALCULATE(DIVIDE(SUM([Est. Cost, Rub]),sumDOL),REMOVEFILTERS('Calendars'[Year]),'Calendars'[Year]=data2)=BLANK()||0,BLANK(),
+--CALCULATE(DIVIDE(SUM([Est. Cost, Rub]),sumDOL),REMOVEFILTERS('Calendars'[Year]),FILTER('Calendars','Calendars'[Year]>data4)))
+
+
+return IF(HASONEVALUE(Calendars[Year]),
+IF(CALCULATE(SUM([Est. Cost, Rub]),REMOVEFILTERS('Calendars'),'Calendars'[Year]=data1R)=BLANK()||0,BLANK(),
+
+IF(CALCULATE(DIVIDE(SUM([Est. Cost, Rub]),sumDOL),REMOVEFILTERS('Calendars'[Year]),'Calendars'[Year]=data1R)=BLANK()||0,BLANK(),
+CALCULATE(DIVIDE(SUM([Est. Cost, Rub]),sumDOL)))),
+
+         BLANK())
