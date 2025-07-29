@@ -1,0 +1,121 @@
+SelectedPromoFilters = 
+VAR ChannelValues = 
+    IF(
+        ISFILTERED('Promotion Channel'[Channel]),
+        VAR SelectedChannels = VALUES('Promotion Channel'[Channel])
+        VAR CountChannels = COUNTROWS(SelectedChannels)
+        RETURN
+            IF(
+                CountChannels >= 1 && CountChannels <= 2,
+                "Канал: " & CONCATENATEX(SelectedChannels, [Channel], ", "),
+                IF(CountChannels > 2, "Канал: Множественный выбор", "")
+            ),
+        ""
+    )
+
+VAR CategoryValues = 
+    IF(
+        ISFILTERED('Promotion Category'[CategoryShort]),
+        VAR SelectedCategories = VALUES('Promotion Category'[CategoryShort])
+        VAR CountCategories = COUNTROWS(SelectedCategories)
+        RETURN
+            IF(
+                CountCategories >= 1 && CountCategories <= 2,
+                "Категория: " & CONCATENATEX(SelectedCategories, [CategoryShort], ", "),
+                IF(CountCategories > 2, "Категория: Множественный выбор", "")
+            ),
+        ""
+    )
+
+VAR RegionValues = 
+    IF(
+        ISFILTERED('Promotion Region'[RegionTS]),
+        VAR SelectedRegions = VALUES('Promotion Region'[RegionTS])
+        VAR CountRegions = COUNTROWS(SelectedRegions)
+        RETURN
+            IF(
+                CountRegions >= 1 && CountRegions <= 2,
+                "Регион: " & CONCATENATEX(SelectedRegions, [RegionTS], ", "),
+                IF(CountRegions > 2, "Регион: Множественный выбор", "")
+            ),
+        ""
+    )
+
+VAR BrandValues = 
+    IF(
+        ISFILTERED('Promotion Brand'[Brand]),
+        VAR SelectedBrands = VALUES('Promotion Brand'[Brand])
+        VAR CountBrands = COUNTROWS(SelectedBrands)
+        RETURN
+            IF(
+                CountBrands >= 1 && CountBrands <= 2,
+                "Бренд: " & CONCATENATEX(SelectedBrands, [Brand], ", "),
+                IF(CountBrands > 2, "Бренд: Множественный выбор", "")
+            ),
+        ""
+    )
+
+VAR ManufacturerValues = 
+    IF(
+        ISFILTERED('Promotion Manufacturer'[ManufacturerReport]),
+        VAR SelectedManufacturers = VALUES('Promotion Manufacturer'[ManufacturerReport])
+        VAR CountManufacturers = COUNTROWS(SelectedManufacturers)
+        RETURN
+            IF(
+                CountManufacturers >= 1 && CountManufacturers <= 2,
+                "Рекламодатель: " & CONCATENATEX(SelectedManufacturers, [ManufacturerReport], ", "),
+                IF(CountManufacturers > 2, "Рекламодатель: Множественный выбор", "")
+            ),
+        ""
+    )
+
+VAR MonthValues = 
+    IF(
+        ISFILTERED('Calendars'[МесяцГод]),
+        VAR SelectedMonths = VALUES('Calendars'[МесяцГод])
+        VAR CountMonths = COUNTROWS(SelectedMonths)
+        RETURN
+            IF(
+                CountMonths >= 1 && CountMonths <= 2,
+                "Месяц: " & CONCATENATEX(SelectedMonths, [МесяцГод], ", "),
+                IF(CountMonths > 2, "Месяц: Множественный выбор", "")
+            ),
+        ""
+    )
+
+VAR YearValues = 
+    IF(
+        ISFILTERED('Calendars'[Year]),
+        VAR SelectedYears = VALUES('Calendars'[Year])
+        VAR CountYears = COUNTROWS(SelectedYears)
+        RETURN
+            IF(
+                CountYears >= 1 && CountYears <= 2,
+                "Год: " & CONCATENATEX(SelectedYears, [Year], ", "),
+                IF(CountYears > 2, "Год: Множественный выбор", "")
+            ),
+        ""
+    )
+
+VAR AllFilters = 
+    FILTER(
+        {
+            (ChannelValues),
+            (CategoryValues),
+            (RegionValues),
+            (BrandValues),
+            (ManufacturerValues),
+            (MonthValues),
+            (YearValues)
+        },
+        [Value] <> ""
+    )
+
+VAR Result = CONCATENATEX(AllFilters, [Value], " | ")
+
+RETURN
+    IF(
+        Result <> "",
+        "Активные фильтры: " & Result,
+        "Нет активных фильтров"
+    )
